@@ -135,7 +135,7 @@ curl -X GET "<BASE_URL>/api/get-version" \
 
 Eg: 
 ```
-curl -X GET "http://127.0.0.1:8000/api/get-versions" \
+curl -X GET "http://127.0.0.1:8000/api/get-version" \
   -F "application=app1" \ 
   -F "service=auth" \
   -F "version=1"
