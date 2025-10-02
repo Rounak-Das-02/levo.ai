@@ -36,6 +36,7 @@ def validate_json_yaml(file, content):
             data = json.loads(content.decode())
         else:
             data = yaml.safe_load(content)
+            print(data)
     except:
         raise HTTPException(status_code=400, detail="invalid json/yaml")
     
@@ -149,7 +150,6 @@ def list_versions(application: str = Form(...), service: str = Form(""), version
         raise HTTPException(status_code=500, detail="Schema file missing")
 
     return {"schema": content, "version": schema_id}
-    ## Download
 
 
 
