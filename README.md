@@ -1,4 +1,4 @@
-# levo.ai - Schema Versioning API
+# Schema Versioning API
 
 ### A lightweight mimic of Levo.ai's `levo import` functionality
 
