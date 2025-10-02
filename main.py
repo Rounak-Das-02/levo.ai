@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, Form, HTTPException
+from fastapi.responses import JSONResponse
 from pathlib import Path
-import uuid
 import yaml
 import json
 import sqlite3
@@ -8,7 +8,8 @@ import sqlite3
 app = FastAPI()
 
 
-DB_FILE = "versions.db"
+
+DB_FILE = "versions.db" ## Name of DB File
 conn = sqlite3.connect(DB_FILE)
 c = conn.cursor()
 c.execute("""
@@ -19,30 +20,28 @@ CREATE TABLE IF NOT EXISTS schemas (
     ext TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )
-""")
+""") ## Creating a table in the sqlite database
 
 conn.commit()
 conn.close()
 
 def validate_json_yaml(file, content):
 
-    ext = Path(file.filename).suffix.lower()
+    ext = Path(file.filename).suffix.lower() ## Getting the file extension
 
     if ext not in [".yaml", ".json"]:
         raise HTTPException(status_code=400, detail="Only [yaml|json] files allowed.")
-    
     try:
         if ext == ".json":
             data = json.loads(content.decode())
         else:
             data = yaml.safe_load(content)
-            print(data)
     except:
         raise HTTPException(status_code=400, detail="invalid json/yaml")
     
     ## We can put more checks in here if needed.
-
     return data, ext
+
 
 @app.post("/api/upload")
 async def upload_schema(application: str = Form(...), service: str = Form(""), file:UploadFile = Form(...)):
@@ -53,8 +52,8 @@ async def upload_schema(application: str = Form(...), service: str = Form(""), f
     c = conn.cursor()
 
     c.execute("INSERT INTO schemas (application, service, ext) VALUES (?, ?, ?)",
-              (application, service, ext))  # filepath updated after ID known
-        
+              (application, service, ext))
+    
     version_id = c.lastrowid
 
     file_name = f"{version_id}{ext}"
@@ -68,7 +67,7 @@ async def upload_schema(application: str = Form(...), service: str = Form(""), f
 
     try:
         with open(f"{storage_path}/{file_name}", "w") as f:
-            f.write(content.decode())
+            f.write(content.decode()) ## Writing the content to the file
 
         conn.commit()
         conn.close()
@@ -98,8 +97,6 @@ def get_latest_schema(application: str = Form(...), service: str = Form("")):
 
     schema_id, ext = row
 
-    print(schema_id, ext)
-
     try:
         storage_path = f"storage/{application}/{service}/"
         filepath = f"{storage_path}/{schema_id}{ext}"
@@ -126,6 +123,7 @@ def list_versions(application: str = Form(...), service: str = Form("")):
     return {"versions": [{"version": r[0],"created_at": r[1]} for r in rows]}
 
 
+## Get the file content of a specific version of a schema
 @app.get("/api/get-version")
 def list_versions(application: str = Form(...), service: str = Form(""), version: int = Form(...)):
     conn = sqlite3.connect(DB_FILE)
@@ -146,10 +144,14 @@ def list_versions(application: str = Form(...), service: str = Form(""), version
         storage_path = f"storage/{application}/{service}/"
         filepath = f"{storage_path}/{schema_id}{ext}"
         content = Path(filepath).read_text()
+        if ext == ".json":
+            content = json.loads(content)
+        else:
+            content = yaml.safe_load(content)
     except Exception:
         raise HTTPException(status_code=500, detail="Schema file missing")
 
-    return {"schema": content, "version": schema_id}
+    return JSONResponse(content={"schema": content, "version": schema_id})
 
 
 
