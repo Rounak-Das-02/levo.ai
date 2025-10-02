@@ -102,6 +102,11 @@ def get_latest_schema(application: str = Form(...), service: str = Form("")):
         filepath = f"{storage_path}/{schema_id}{ext}"
         print(filepath)
         content = Path(filepath).read_text()
+        if ext == ".json":
+            content = json.loads(content)
+        else:
+            content = yaml.safe_load(content)
+            
     except Exception:
         raise HTTPException(status_code=500, detail="Schema file missing")
 
